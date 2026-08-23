@@ -1,0 +1,1253 @@
+
+                        <!DOCTYPE html>
+                        <html lang="en">
+                        <head>
+                            <meta charset="UTF-8">
+                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <style>
+                body {
+                  background-color: white; /* Ensure the iframe has a white background */
+                }
+
+                * {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  touch-action: none;
+}
+body {
+  font-family: "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.game-wrapper {
+  width: 100%;
+  max-width: 480px;
+  height: 100vh;
+  max-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px;
+  overflow: hidden;
+}
+.header {
+  width: 100%;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 6px 0;
+  flex-shrink: 0;
+}
+.score-section, .target-section, .moves-section {
+  text-align: center;
+  background: rgba(255,255,255,0.2);
+  border-radius: 12px;
+  padding: 6px 14px;
+  min-width: 70px;
+}
+.label {
+  font-size: 11px;
+  color: rgba(255,255,255,0.8);
+  margin-bottom: 2px;
+}
+.value {
+  font-size: 20px;
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+.value.moves-low {
+  color: #ff6b6b;
+  animation: pulse 0.8s infinite;
+}
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+.board-container {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 0;
+  width: 100%;
+}
+.board {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  background: rgba(0,0,0,0.15);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3), inset 0 2px 8px rgba(255,255,255,0.1);
+  border: 3px solid rgba(255,255,255,0.2);
+}
+.tile {
+  position: absolute;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: transform 0.25s ease, opacity 0.2s ease;
+  cursor: pointer;
+  z-index: 1;
+}
+.tile-inner {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 28px;
+  border-radius: 14px;
+  box-shadow: inset 0 -3px 6px rgba(0,0,0,0.15), inset 0 3px 6px rgba(255,255,255,0.3), 0 2px 4px rgba(0,0,0,0.15);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  position: relative;
+}
+.tile.selected .tile-inner {
+  box-shadow: inset 0 -3px 6px rgba(0,0,0,0.15), inset 0 3px 6px rgba(255,255,255,0.5), 0 0 0 3px #fff, 0 0 12px rgba(255,255,255,0.6);
+  transform: scale(1.08);
+}
+.tile.matched .tile-inner {
+  animation: matchPop 0.3s ease forwards;
+}
+@keyframes matchPop {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.3); opacity: 0.8; }
+  100% { transform: scale(0); opacity: 0; }
+}
+.tile.invalid-shake .tile-inner {
+  animation: shake 0.3s ease;
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
+}
+.controls {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px 0;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+.btn {
+  border: none;
+  padding: 10px 18px;
+  font-size: 15px;
+  font-weight: bold;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  font-family: inherit;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  white-space: nowrap;
+}
+.btn:active {
+  transform: scale(0.95);
+}
+.btn-sound {
+  background: linear-gradient(135deg, #43e97b, #38f9d7);
+  box-shadow: 0 4px 15px rgba(67,233,123,0.4);
+}
+.btn-sound.off {
+  background: linear-gradient(135deg, #a8a8a8, #7a7a7a);
+  box-shadow: 0 4px 15px rgba(120,120,120,0.4);
+}
+.btn-music {
+  background: linear-gradient(135deg, #f093fb, #f5576c);
+  box-shadow: 0 4px 15px rgba(245,87,108,0.4);
+}
+.btn-music.off {
+  background: linear-gradient(135deg, #a8a8a8, #7a7a7a);
+  box-shadow: 0 4px 15px rgba(120,120,120,0.4);
+}
+.btn-restart {
+  background: linear-gradient(135deg, #4facfe, #00f2fe);
+  box-shadow: 0 4px 15px rgba(79,172,254,0.4);
+}
+/* Modal */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.7);
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+.modal-overlay.show {
+  display: flex;
+}
+.modal {
+  background: linear-gradient(135deg, #fff 0%, #f0f4ff 100%);
+  border-radius: 24px;
+  padding: 30px 40px;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  max-width: 320px;
+  width: 85%;
+  animation: modalIn 0.3s ease;
+}
+@keyframes modalIn {
+  from { transform: scale(0.8); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+.modal-title {
+  font-size: 26px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 10px;
+}
+.modal-stars {
+  font-size: 40px;
+  margin: 10px 0;
+  letter-spacing: 8px;
+}
+.modal-score {
+  font-size: 18px;
+  color: #666;
+  margin-bottom: 20px;
+}
+.modal .btn {
+  width: 100%;
+  padding: 12px;
+  font-size: 18px;
+}
+/* Score popup */
+.score-popup {
+  position: absolute;
+  font-size: 18px;
+  font-weight: bold;
+  color: #FFD700;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  pointer-events: none;
+  z-index: 100;
+  animation: scoreFloat 0.8s ease forwards;
+}
+@keyframes scoreFloat {
+  0% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-40px) scale(1.3); }
+}
+/* Combo text */
+.combo-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 36px;
+  font-weight: bold;
+  color: #FFD700;
+  text-shadow: 0 0 20px rgba(255,215,0,0.8), 0 2px 4px rgba(0,0,0,0.5);
+  pointer-events: none;
+  z-index: 100;
+  animation: comboAppear 0.8s ease forwards;
+}
+@keyframes comboAppear {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+  30% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
+}
+/* Responsive tile size */
+@media (max-height: 600px) {
+  .tile-inner { font-size: 22px; }
+}
+@media (max-height: 500px) {
+  .tile-inner { font-size: 18px; }
+  .header { padding: 3px 0; }
+  .value { font-size: 16px; }
+  .label { font-size: 10px; }
+  .btn { padding: 8px 14px; font-size: 13px; }
+}
+
+
+              </style>
+                        </head>
+                        <body>
+                            <!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>消消乐</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="game-wrapper">
+    <div class="header">
+      <div class="score-section">
+        <div class="label">分数</div>
+        <div id="scoreDisplay" class="value">0</div>
+      </div>
+      <div class="target-section">
+        <div class="label">目标分数</div>
+        <div id="targetDisplay" class="value">3000</div>
+      </div>
+      <div class="moves-section">
+        <div class="label">剩余步数</div>
+        <div id="movesDisplay" class="value">30</div>
+      </div>
+    </div>
+
+    <div class="board-container" id="boardContainer">
+      <div class="board" id="board"></div>
+    </div>
+
+    <div class="controls">
+      <button id="btnSound" class="btn btn-sound">🔊 音效</button>
+      <button id="btnMusic" class="btn btn-music">🎵 音乐</button>
+      <button id="btnRestart" class="btn btn-restart">🔄 重新开始</button>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <div id="modalTitle" class="modal-title">挑战成功！</div>
+      <div id="modalStars" class="modal-stars">⭐⭐⭐</div>
+      <div id="modalScore" class="modal-score">最终分数：0</div>
+      <button id="btnModalRestart" class="btn btn-restart">再来一局</button>
+    </div>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
+
+
+              <script>
+                              (function () {
+  'use strict';
+
+  // ==================== 常量 ====================
+  const BOARD_SIZE = 8;
+  const TILE_TYPES = 8;
+  const INITIAL_MOVES = 30;
+  const TARGET_SCORE = 3000;
+  const STARS = { one: 1000, two: 2000, three: 3000 };
+  const EMOJIS = ['🍎', '🍊', '🍋', '🍇', '🍓', '🍒', '🥝', '🫐'];
+  const COLORS = [
+    '#ff4757', '#ff6348', '#ffa502', '#8854d0',
+    '#ff6b81', '#ee5a24', '#2ed573', '#5f27cd'
+  ];
+
+  // ==================== 游戏状态 ====================
+  let board = [];
+  let score = 0;
+  let movesLeft = 0;
+  let gameActive = false;
+  let isAnimating = false;
+  let selectedTile = null;
+  let comboCount = 0;
+
+  // 手势锁：一次 pointer 手势只能触发一次交换
+  let gestureInProgress = false;
+
+  // ==================== 音频系统 ====================
+  let audioCtx = null;
+  let soundEnabled = true;
+  let musicEnabled = false;
+  let musicTimer = null;
+  let hasUserInteracted = false;
+
+  function ensureAudio() {
+    if (!audioCtx) {
+      try {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      } catch (e) {
+        audioCtx = null;
+      }
+    }
+    if (audioCtx && audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+  }
+
+  function playTone(freq, duration, type, volume, startTime) {
+    if (!soundEnabled || !audioCtx) return;
+    const t0 = startTime != null ? startTime : audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type || 'sine';
+    osc.frequency.setValueAtTime(freq, t0);
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.exponentialRampToValueAtTime(volume || 0.15, t0 + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(t0);
+    osc.stop(t0 + duration + 0.02);
+  }
+
+  function playSwapSound() {
+    if (!soundEnabled) return;
+    ensureAudio();
+    if (!audioCtx) return;
+    const t0 = audioCtx.currentTime;
+    playTone(520, 0.08, 'sine', 0.12, t0);
+    playTone(680, 0.08, 'sine', 0.12, t0 + 0.05);
+  }
+
+  function playMatchSound(count) {
+    if (!soundEnabled) return;
+    ensureAudio();
+    if (!audioCtx) return;
+    const t0 = audioCtx.currentTime;
+    const base = 600 + Math.min(count, 6) * 60;
+    playTone(base, 0.12, 'triangle', 0.15, t0);
+    playTone(base * 1.25, 0.12, 'triangle', 0.15, t0 + 0.06);
+    playTone(base * 1.5, 0.15, 'triangle', 0.15, t0 + 0.12);
+  }
+
+  function playComboSound(combo) {
+    if (!soundEnabled) return;
+    ensureAudio();
+    if (!audioCtx) return;
+    const t0 = audioCtx.currentTime;
+    const base = 700 + combo * 80;
+    for (let i = 0; i < 4; i++) {
+      playTone(base + i * 100, 0.1, 'square', 0.1, t0 + i * 0.05);
+    }
+  }
+
+  function playInvalidSound() {
+    if (!soundEnabled) return;
+    ensureAudio();
+    if (!audioCtx) return;
+    const t0 = audioCtx.currentTime;
+    playTone(220, 0.1, 'sawtooth', 0.08, t0);
+    playTone(180, 0.12, 'sawtooth', 0.08, t0 + 0.08);
+  }
+
+  function playEndSound(win) {
+    if (!soundEnabled) return;
+    ensureAudio();
+    if (!audioCtx) return;
+    const t0 = audioCtx.currentTime;
+    if (win) {
+      playTone(523, 0.15, 'triangle', 0.18, t0);
+      playTone(659, 0.15, 'triangle', 0.18, t0 + 0.15);
+      playTone(784, 0.15, 'triangle', 0.18, t0 + 0.3);
+      playTone(1047, 0.3, 'triangle', 0.18, t0 + 0.45);
+    } else {
+      playTone(400, 0.2, 'sine', 0.15, t0);
+      playTone(300, 0.2, 'sine', 0.15, t0 + 0.2);
+      playTone(220, 0.4, 'sine', 0.15, t0 + 0.4);
+    }
+  }
+
+  // 背景音乐：简单的循环旋律
+  const MUSIC_NOTES = [
+    { f: 523, d: 0.3 },
+    { f: 587, d: 0.3 },
+    { f: 659, d: 0.3 },
+    { f: 523, d: 0.3 },
+    { f: 659, d: 0.3 },
+    { f: 698, d: 0.3 },
+    { f: 784, d: 0.6 },
+    { f: 784, d: 0.3 },
+    { f: 880, d: 0.3 },
+    { f: 784, d: 0.3 },
+    { f: 659, d: 0.3 },
+    { f: 587, d: 0.3 },
+    { f: 523, d: 0.6 }
+  ];
+
+  function scheduleMusicLoop() {
+    if (!musicEnabled || !audioCtx) return;
+    let t = audioCtx.currentTime + 0.05;
+    for (const note of MUSIC_NOTES) {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(note.f, t);
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.exponentialRampToValueAtTime(0.04, t + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + note.d - 0.02);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(t);
+      osc.stop(t + note.d);
+      t += note.d;
+    }
+    const totalDuration = MUSIC_NOTES.reduce(function (s, n) { return s + n.d; }, 0);
+    musicTimer = setTimeout(scheduleMusicLoop, totalDuration * 1000 - 100);
+  }
+
+  function startMusic() {
+    if (!musicEnabled) return;
+    ensureAudio();
+    if (!audioCtx) return;
+    stopMusic();
+    scheduleMusicLoop();
+  }
+
+  function stopMusic() {
+    if (musicTimer) {
+      clearTimeout(musicTimer);
+      musicTimer = null;
+    }
+  }
+
+  function toggleSound() {
+    soundEnabled = !soundEnabled;
+    try { localStorage.setItem('soundEnabled', soundEnabled ? '1' : '0'); } catch (e) {}
+    updateSoundButton();
+    if (soundEnabled) {
+      ensureAudio();
+      playTone(800, 0.1, 'sine', 0.1);
+    }
+  }
+
+  function toggleMusic() {
+    musicEnabled = !musicEnabled;
+    try { localStorage.setItem('musicEnabled', musicEnabled ? '1' : '0'); } catch (e) {}
+    updateMusicButton();
+    if (musicEnabled && hasUserInteracted) {
+      startMusic();
+    } else {
+      stopMusic();
+    }
+  }
+
+  function updateSoundButton() {
+    const btn = document.getElementById('btnSound');
+    if (!btn) return;
+    btn.textContent = (soundEnabled ? '🔊' : '🔇') + ' 音效';
+    if (soundEnabled) btn.classList.remove('off');
+    else btn.classList.add('off');
+  }
+
+  function updateMusicButton() {
+    const btn = document.getElementById('btnMusic');
+    if (!btn) return;
+    btn.textContent = (musicEnabled ? '🎵' : '🔇') + ' 音乐';
+    if (musicEnabled) btn.classList.remove('off');
+    else btn.classList.add('off');
+  }
+
+  // ==================== DOM 引用 ====================
+  let boardEl = null;
+  let boardContainerEl = null;
+  let scoreEl = null;
+  let movesEl = null;
+  let targetEl = null;
+  let modalOverlayEl = null;
+  let modalTitleEl = null;
+  let modalStarsEl = null;
+  let modalScoreEl = null;
+
+  let tileEls = [];
+  let tileSize = 0;
+  let boardPixelSize = 0;
+
+  // ==================== DOM 初始化 ====================
+  function initDOM() {
+    boardEl = document.getElementById('board');
+    boardContainerEl = document.getElementById('boardContainer');
+    scoreEl = document.getElementById('scoreDisplay');
+    movesEl = document.getElementById('movesDisplay');
+    targetEl = document.getElementById('targetDisplay');
+    modalOverlayEl = document.getElementById('modalOverlay');
+    modalTitleEl = document.getElementById('modalTitle');
+    modalStarsEl = document.getElementById('modalStars');
+    modalScoreEl = document.getElementById('modalScore');
+
+    document.getElementById('btnSound').addEventListener('click', function () {
+      markUserInteracted();
+      toggleSound();
+    });
+    document.getElementById('btnMusic').addEventListener('click', function () {
+      markUserInteracted();
+      toggleMusic();
+    });
+    document.getElementById('btnRestart').addEventListener('click', function () {
+      markUserInteracted();
+      restartGame();
+    });
+    document.getElementById('btnModalRestart').addEventListener('click', function () {
+      markUserInteracted();
+      modalOverlayEl.classList.remove('show');
+      setTimeout(restartGame, 200);
+    });
+
+    boardContainerEl.addEventListener('pointerdown', onPointerDown);
+    boardContainerEl.addEventListener('pointermove', onPointerMove);
+    boardContainerEl.addEventListener('pointerup', onPointerUp);
+    boardContainerEl.addEventListener('pointercancel', onPointerCancel);
+
+    // 加载持久化设置
+    try {
+      const s = localStorage.getItem('soundEnabled');
+      if (s !== null) soundEnabled = s !== '0';
+      const m = localStorage.getItem('musicEnabled');
+      if (m !== null) musicEnabled = m === '1';
+    } catch (e) {}
+    updateSoundButton();
+    updateMusicButton();
+  }
+
+  function markUserInteracted() {
+    if (!hasUserInteracted) {
+      hasUserInteracted = true;
+      ensureAudio();
+      if (musicEnabled) {
+        startMusic();
+      }
+    }
+  }
+
+  // ==================== 棋盘尺寸 ====================
+  function calcBoardSize() {
+    const containerRect = boardContainerEl.getBoundingClientRect();
+    const maxW = containerRect.width - 20;
+    const maxH = containerRect.height - 20;
+    boardPixelSize = Math.min(maxW, maxH);
+    if (boardPixelSize > 480) boardPixelSize = 480;
+    boardPixelSize = Math.floor(boardPixelSize);
+    boardEl.style.width = boardPixelSize + 'px';
+    boardEl.style.height = boardPixelSize + 'px';
+    tileSize = Math.floor(boardPixelSize / BOARD_SIZE);
+  }
+
+  // ==================== 棋盘生成 ====================
+  function shuffleBoardData() {
+    const types = [];
+    for (let r = 0; r < BOARD_SIZE; r++) {
+      for (let c = 0; c < BOARD_SIZE; c++) {
+        types.push(board[r][c]);
+      }
+    }
+    for (let i = types.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [types[i], types[j]] = [types[j], types[i]];
+    }
+    let idx = 0;
+    for (let r = 0; r < BOARD_SIZE; r++) {
+      for (let c = 0; c < BOARD_SIZE; c++) {
+        board[r][c] = types[idx++];
+      }
+    }
+  }
+
+  function generateBoard() {
+    board = [];
+    for (let r = 0; r < BOARD_SIZE; r++) {
+      board[r] = [];
+      for (let c = 0; c < BOARD_SIZE; c++) {
+        let type;
+        do {
+          type = Math.floor(Math.random() * TILE_TYPES);
+        } while (wouldMatch(r, c, type));
+        board[r][c] = type;
+      }
+    }
+    while (!hasValidMoves()) {
+      shuffleBoardData();
+    }
+  }
+
+  function wouldMatch(row, col, type) {
+    if (col >= 2 && board[row][col - 1] === type && board[row][col - 2] === type) return true;
+    if (row >= 2 && board[row - 1] && board[row - 1][col] === type && board[row - 2] && board[row - 2][col] === type) return true;
+    return false;
+  }
+
+  // ==================== DOM 渲染 ====================
+  function createTileDOMs() {
+    boardEl.innerHTML = '';
+    tileEls = [];
+    for (let r = 0; r < BOARD_SIZE; r++) {
+      tileEls[r] = [];
+      for (let c = 0; c < BOARD_SIZE; c++) {
+        const el = document.createElement('div');
+        el.className = 'tile';
+        el.dataset.row = r;
+        el.dataset.col = c;
+        const inner = document.createElement('div');
+        inner.className = 'tile-inner';
+        inner.style.background = COLORS[board[r][c]];
+        inner.textContent = EMOJIS[board[r][c]];
+        el.appendChild(inner);
+        positionTile(el, r, c);
+        boardEl.appendChild(el);
+        tileEls[r][c] = el;
+      }
+    }
+  }
+
+  function positionTile(el, row, col) {
+    el.style.width = tileSize + 'px';
+    el.style.height = tileSize + 'px';
+    el.style.left = (col * tileSize) + 'px';
+    el.style.top = (row * tileSize) + 'px';
+    el.style.transform = '';
+  }
+
+  // ==================== UI 更新 ====================
+  function updateUI() {
+    scoreEl.textContent = score;
+    movesEl.textContent = movesLeft;
+    targetEl.textContent = TARGET_SCORE;
+    if (movesLeft <= 5) {
+      movesEl.classList.add('moves-low');
+    } else {
+      movesEl.classList.remove('moves-low');
+    }
+  }
+
+  // ==================== 输入处理 ====================
+  let pointerStartRow = -1;
+  let pointerStartCol = -1;
+  let pointerMoved = false;
+
+  function getTileAt(x, y) {
+    const rect = boardEl.getBoundingClientRect();
+    const col = Math.floor((x - rect.left) / tileSize);
+    const row = Math.floor((y - rect.top) / tileSize);
+    if (row >= 0 && row < BOARD_SIZE && col >= 0 && col < BOARD_SIZE) {
+      return { row: row, col: col };
+    }
+    return null;
+  }
+
+  function onPointerDown(e) {
+    if (!gameActive || isAnimating || gestureInProgress) return;
+    e.preventDefault();
+    markUserInteracted();
+    const tile = getTileAt(e.clientX, e.clientY);
+    if (!tile) return;
+
+    // 如果已经有选中，并且当前点击的是相邻格子，则交换
+    if (selectedTile) {
+      const r1 = selectedTile.row;
+      const c1 = selectedTile.col;
+      const dr = Math.abs(r1 - tile.row);
+      const dc = Math.abs(c1 - tile.col);
+      if ((dr === 1 && dc === 0) || (dr === 0 && dc === 1)) {
+        clearSelection();
+        trySwap(r1, c1, tile.row, tile.col);
+        return;
+      }
+    }
+
+    pointerStartRow = tile.row;
+    pointerStartCol = tile.col;
+    pointerMoved = false;
+    gestureInProgress = true;
+
+    clearSelection();
+    selectedTile = { row: tile.row, col: tile.col };
+    const selEl = tileEls[tile.row][tile.col];
+    if (selEl) selEl.classList.add('selected');
+  }
+
+  function onPointerMove(e) {
+    if (!gameActive || isAnimating || !gestureInProgress) return;
+    if (pointerMoved) return;
+    const tile = getTileAt(e.clientX, e.clientY);
+    if (!tile) return;
+    if (tile.row === pointerStartRow && tile.col === pointerStartCol) return;
+    const dr = Math.abs(tile.row - pointerStartRow);
+    const dc = Math.abs(tile.col - pointerStartCol);
+    if ((dr === 1 && dc === 0) || (dr === 0 && dc === 1)) {
+      pointerMoved = true;
+      const r1 = pointerStartRow;
+      const c1 = pointerStartCol;
+      const r2 = tile.row;
+      const c2 = tile.col;
+      clearSelection();
+      gestureInProgress = false;
+      trySwap(r1, c1, r2, c2);
+    }
+  }
+
+  function onPointerUp(e) {
+    if (!gestureInProgress) return;
+    e.preventDefault();
+    gestureInProgress = false;
+  }
+
+  function onPointerCancel() {
+    clearSelection();
+    gestureInProgress = false;
+  }
+
+  function clearSelection() {
+    if (selectedTile) {
+      const el = tileEls[selectedTile.row] && tileEls[selectedTile.row][selectedTile.col];
+      if (el) el.classList.remove('selected');
+      selectedTile = null;
+    }
+  }
+
+  // ==================== 交换逻辑 ====================
+  function trySwap(r1, c1, r2, c2) {
+    if (!gameActive || isAnimating) return;
+    const dr = Math.abs(r1 - r2);
+    const dc = Math.abs(c1 - c2);
+    if (!((dr === 1 && dc === 0) || (dr === 0 && dc === 1))) return;
+
+    swapInData(r1, c1, r2, c2);
+    const matches = findAllMatches();
+    swapInData(r1, c1, r2, c2);
+
+    if (matches.length === 0) {
+      animateInvalidSwap(r1, c1, r2, c2);
+    } else {
+      movesLeft--;
+      updateUI();
+      playSwapSound();
+      animateValidSwap(r1, c1, r2, c2, function () {
+        resolveMatches();
+      });
+    }
+  }
+
+  function swapInData(r1, c1, r2, c2) {
+    const temp = board[r1][c1];
+    board[r1][c1] = board[r2][c2];
+    board[r2][c2] = temp;
+  }
+
+  // ==================== 动画：无效交换回弹 ====================
+  function animateInvalidSwap(r1, c1, r2, c2) {
+    isAnimating = true;
+    const el1 = tileEls[r1][c1];
+    const el2 = tileEls[r2][c2];
+    if (!el1 || !el2) {
+      isAnimating = false;
+      return;
+    }
+
+    const dx = (c2 - c1) * tileSize;
+    const dy = (r2 - r1) * tileSize;
+
+    el1.style.transition = 'transform 0.18s ease-out';
+    el2.style.transition = 'transform 0.18s ease-out';
+    el1.style.transform = 'translate(' + dx + 'px, ' + dy + 'px)';
+    el2.style.transform = 'translate(' + (-dx) + 'px, ' + (-dy) + 'px)';
+
+    playInvalidSound();
+
+    setTimeout(function () {
+      el1.style.transition = 'transform 0.12s ease-in-out';
+      el2.style.transition = 'transform 0.12s ease-in-out';
+      el1.style.transform = '';
+      el2.style.transform = '';
+
+      setTimeout(function () {
+        el1.style.transition = '';
+        el2.style.transition = '';
+        positionTile(el1, r1, c1);
+        positionTile(el2, r2, c2);
+        isAnimating = false;
+      }, 130);
+    }, 180);
+  }
+
+  // ==================== 动画：有效交换 ====================
+  function animateValidSwap(r1, c1, r2, c2, callback) {
+    isAnimating = true;
+    const el1 = tileEls[r1][c1];
+    const el2 = tileEls[r2][c2];
+
+    tileEls[r1][c1] = el2;
+    tileEls[r2][c2] = el1;
+    swapInData(r1, c1, r2, c2);
+
+    const dx = (c2 - c1) * tileSize;
+    const dy = (r2 - r1) * tileSize;
+    el1.style.transition = 'transform 0.22s ease-out';
+    el2.style.transition = 'transform 0.22s ease-out';
+    el1.style.transform = 'translate(' + dx + 'px, ' + dy + 'px)';
+    el2.style.transform = 'translate(' + (-dx) + 'px, ' + (-dy) + 'px)';
+
+    setTimeout(function () {
+      el1.style.transition = '';
+      el2.style.transition = '';
+      el1.style.transform = '';
+      el2.style.transform = '';
+      positionTile(el1, r2, c2);
+      positionTile(el2, r1, c1);
+      isAnimating = false;
+      if (callback) callback();
+    }, 230);
+  }
+
+  // ==================== 匹配检测 ====================
+  function findAllMatches() {
+    const matched = [];
+    const matchedSet = new Set();
+
+    for (let r = 0; r < BOARD_SIZE; r++) {
+      for (let c = 0; c < BOARD_SIZE - 2; c++) {
+        const type = board[r][c];
+        if (type === -1) continue;
+        let count = 1;
+        while (c + count < BOARD_SIZE && board[r][c + count] === type) {
+          count++;
+        }
+        if (count >= 3) {
+          for (let k = 0; k < count; k++) {
+            const key = r + ',' + (c + k);
+            if (!matchedSet.has(key)) {
+              matchedSet.add(key);
+              matched.push({ row: r, col: c + k });
+            }
+          }
+        }
+        c += count - 1;
+      }
+    }
+
+    for (let c = 0; c < BOARD_SIZE; c++) {
+      for (let r = 0; r < BOARD_SIZE - 2; r++) {
+        const type = board[r][c];
+        if (type === -1) continue;
+        let count = 1;
+        while (r + count < BOARD_SIZE && board[r + count][c] === type) {
+          count++;
+        }
+        if (count >= 3) {
+          for (let k = 0; k < count; k++) {
+            const key = (r + k) + ',' + c;
+            if (!matchedSet.has(key)) {
+              matchedSet.add(key);
+              matched.push({ row: r + k, col: c });
+            }
+          }
+        }
+        r += count - 1;
+      }
+    }
+
+    return matched;
+  }
+
+  // ==================== 消除 → 下落 → 补充 连锁 ====================
+  function resolveMatches() {
+    const matches = findAllMatches();
+    if (matches.length === 0) {
+      comboCount = 0;
+      if (!hasValidMoves()) {
+        showComboText('洗牌！');
+        setTimeout(function () {
+          shuffleBoard();
+        }, 600);
+      } else if (movesLeft <= 0) {
+        endGame();
+      }
+      return;
+    }
+
+    comboCount++;
+    if (comboCount > 1) {
+      showComboText(comboCount + ' 连击！');
+      playComboSound(comboCount);
+    } else {
+      playMatchSound(matches.length);
+    }
+
+    const basePoints = matches.length * 10;
+    const comboMultiplier = comboCount;
+    const points = basePoints * comboMultiplier;
+    score += points;
+    updateUI();
+
+    if (matches.length > 0) {
+      const midMatch = matches[Math.floor(matches.length / 2)];
+      showScorePopup(midMatch.row, midMatch.col, '+' + points);
+    }
+
+    isAnimating = true;
+    for (const m of matches) {
+      const el = tileEls[m.row][m.col];
+      if (el) el.classList.add('matched');
+    }
+
+    setTimeout(function () {
+      for (const m of matches) {
+        board[m.row][m.col] = -1;
+        const el = tileEls[m.row][m.col];
+        if (el) el.remove();
+        tileEls[m.row][m.col] = null;
+      }
+
+      applyGravity();
+
+      setTimeout(function () {
+        refillBoard(function () {
+          isAnimating = false;
+          setTimeout(function () {
+            resolveMatches();
+          }, 80);
+        });
+      }, 260);
+    }, 300);
+  }
+
+  // ==================== 重力 ====================
+  function applyGravity() {
+    for (let c = 0; c < BOARD_SIZE; c++) {
+      let writeRow = BOARD_SIZE - 1;
+      for (let r = BOARD_SIZE - 1; r >= 0; r--) {
+        if (board[r][c] !== -1) {
+          if (r !== writeRow) {
+            board[writeRow][c] = board[r][c];
+            board[r][c] = -1;
+
+            const oldEl = tileEls[r][c];
+            tileEls[r][c] = null;
+            tileEls[writeRow][c] = oldEl;
+
+            if (oldEl) {
+              oldEl.dataset.row = writeRow;
+              const dy = (writeRow - r) * tileSize;
+              oldEl.style.transition = 'transform 0.22s ease-in';
+              oldEl.style.transform = 'translate(0, ' + dy + 'px)';
+              (function (el, wr, cc) {
+                setTimeout(function () {
+                  el.style.transition = '';
+                  el.style.transform = '';
+                  positionTile(el, wr, cc);
+                }, 230);
+              })(oldEl, writeRow, c);
+            }
+          }
+          writeRow--;
+        }
+      }
+    }
+  }
+
+  // ==================== 补充新棋子 ====================
+  function refillBoard(callback) {
+    const newEls = [];
+    for (let c = 0; c < BOARD_SIZE; c++) {
+      let emptyCount = 0;
+      for (let r = 0; r < BOARD_SIZE; r++) {
+        if (board[r][c] === -1) emptyCount++;
+      }
+      for (let i = 0; i < emptyCount; i++) {
+        const r = emptyCount - 1 - i;
+        const type = Math.floor(Math.random() * TILE_TYPES);
+        board[r][c] = type;
+
+        const el = document.createElement('div');
+        el.className = 'tile';
+        el.dataset.row = r;
+        el.dataset.col = c;
+        const inner = document.createElement('div');
+        inner.className = 'tile-inner';
+        inner.style.background = COLORS[type];
+        inner.textContent = EMOJIS[type];
+        el.appendChild(inner);
+        tileEls[r][c] = el;
+        boardEl.appendChild(el);
+
+        el.style.width = tileSize + 'px';
+        el.style.height = tileSize + 'px';
+        el.style.left = (c * tileSize) + 'px';
+        el.style.top = (-(emptyCount - i) * tileSize) + 'px';
+        newEls.push({ el: el, r: r, c: c });
+      }
+    }
+
+    if (newEls.length === 0) {
+      callback();
+      return;
+    }
+
+    void boardEl.offsetHeight;
+    requestAnimationFrame(function () {
+      for (const item of newEls) {
+        item.el.style.transition = 'top 0.25s ease-out';
+        item.el.style.top = (item.r * tileSize) + 'px';
+      }
+      setTimeout(callback, 280);
+    });
+  }
+
+  // ==================== 合法移动检测 ====================
+  function hasValidMoves() {
+    for (let r = 0; r < BOARD_SIZE; r++) {
+      for (let c = 0; c < BOARD_SIZE; c++) {
+        if (c + 1 < BOARD_SIZE) {
+          swapInData(r, c, r, c + 1);
+          const has = findAllMatches().length > 0;
+          swapInData(r, c, r, c + 1);
+          if (has) return true;
+        }
+        if (r + 1 < BOARD_SIZE) {
+          swapInData(r, c, r + 1, c);
+          const has = findAllMatches().length > 0;
+          swapInData(r, c, r + 1, c);
+          if (has) return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  // ==================== 洗牌 ====================
+  function shuffleBoard() {
+    isAnimating = true;
+    clearSelection();
+
+    let types = [];
+    for (let r = 0; r < BOARD_SIZE; r++) {
+      for (let c = 0; c < BOARD_SIZE; c++) {
+        types.push(board[r][c]);
+      }
+    }
+
+    let attempts = 0;
+    do {
+      for (let i = types.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [types[i], types[j]] = [types[j], types[i]];
+      }
+      let idx = 0;
+      for (let r = 0; r < BOARD_SIZE; r++) {
+        for (let c = 0; c < BOARD_SIZE; c++) {
+          board[r][c] = types[idx++];
+        }
+      }
+      attempts++;
+    } while (!hasValidMoves() && attempts < 100);
+
+    boardEl.innerHTML = '';
+    tileEls = [];
+    for (let r = 0; r < BOARD_SIZE; r++) {
+      tileEls[r] = [];
+      for (let c = 0; c < BOARD_SIZE; c++) {
+        const el = document.createElement('div');
+        el.className = 'tile';
+        el.dataset.row = r;
+        el.dataset.col = c;
+        const inner = document.createElement('div');
+        inner.className = 'tile-inner';
+        inner.style.background = COLORS[board[r][c]];
+        inner.textContent = EMOJIS[board[r][c]];
+        el.appendChild(inner);
+        positionTile(el, r, c);
+        boardEl.appendChild(el);
+        tileEls[r][c] = el;
+      }
+    }
+
+    isAnimating = false;
+
+    const matches = findAllMatches();
+    if (matches.length > 0) {
+      setTimeout(resolveMatches, 100);
+    } else {
+      checkGameState();
+    }
+  }
+
+  // ==================== UI 特效 ====================
+  function showScorePopup(row, col, text) {
+    const popup = document.createElement('div');
+    popup.className = 'score-popup';
+    popup.textContent = text;
+    popup.style.left = (col * tileSize + tileSize / 2) + 'px';
+    popup.style.top = (row * tileSize) + 'px';
+    popup.style.transform = 'translate(-50%, -50%)';
+    boardEl.appendChild(popup);
+    setTimeout(function () { popup.remove(); }, 800);
+  }
+
+  function showComboText(text) {
+    const combo = document.createElement('div');
+    combo.className = 'combo-text';
+    combo.textContent = text;
+    boardEl.appendChild(combo);
+    setTimeout(function () { combo.remove(); }, 800);
+  }
+
+  // ==================== 游戏结束 ====================
+  function endGame() {
+    gameActive = false;
+    stopMusic();
+    const stars = score >= STARS.three ? '⭐⭐⭐' : score >= STARS.two ? '⭐⭐' : score >= STARS.one ? '⭐' : '☆☆☆';
+    const title = score >= STARS.one ? '挑战成功！' : '挑战失败';
+    modalTitleEl.textContent = title;
+    modalStarsEl.textContent = stars;
+    modalScoreEl.textContent = '最终分数：' + score;
+    modalOverlayEl.classList.add('show');
+    playEndSound(score >= STARS.one);
+  }
+
+  function checkGameState() {
+    if (!gameActive || isAnimating) return;
+    if (movesLeft <= 0) {
+      endGame();
+      return;
+    }
+    if (!hasValidMoves()) {
+      showComboText('自动洗牌');
+      setTimeout(shuffleBoard, 600);
+    }
+  }
+
+  function restartGame() {
+    modalOverlayEl.classList.remove('show');
+    score = 0;
+    movesLeft = INITIAL_MOVES;
+    gameActive = true;
+    isAnimating = false;
+    gestureInProgress = false;
+    selectedTile = null;
+    comboCount = 0;
+    generateBoard();
+    createTileDOMs();
+    updateUI();
+    calcBoardSize();
+    for (let r = 0; r < BOARD_SIZE; r++) {
+      for (let c = 0; c < BOARD_SIZE; c++) {
+        if (tileEls[r] && tileEls[r][c]) {
+          positionTile(tileEls[r][c], r, c);
+        }
+      }
+    }
+    checkGameState();
+  }
+
+  function init() {
+    initDOM();
+    calcBoardSize();
+    restartGame();
+
+    window.addEventListener('resize', function () {
+      calcBoardSize();
+      for (let r = 0; r < BOARD_SIZE; r++) {
+        for (let c = 0; c < BOARD_SIZE; c++) {
+          if (tileEls[r] && tileEls[r][c]) {
+            positionTile(tileEls[r][c], r, c);
+          }
+        }
+      }
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', init);
+})();
+
+
+              </script>
+                        </body>
+                        </html>
+                    
